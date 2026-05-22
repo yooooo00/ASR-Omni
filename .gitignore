@@ -1,0 +1,31 @@
+# Local Python environments
+.conda/
+.conda-qwen3-asr/
+.venv/
+venv/
+
+# Model weights and downloaded caches
+models/
+vendor/
+
+# Python caches and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Local agent skills/tools
+.agents/
+skills-lock.json
+
+# Editor and OS noise
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
