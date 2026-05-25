@@ -19,6 +19,7 @@ __pycache__/
 *.log
 *.tmp
 *.bak
+settings.json
 
 # Local agent skills/tools
 .agents/

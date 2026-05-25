@@ -13,12 +13,14 @@ class QwenCpuAsrBackend:
         self,
         model_dir: Path,
         *,
-        language: str = "Chinese",
+        language: Optional[str] = "auto",
+        context: str = "",
         max_new_tokens: int = 128,
         torch_threads: Optional[int] = 12,
     ) -> None:
         self.model_dir = Path(model_dir)
         self.language = language
+        self.context = context
         self.max_new_tokens = int(max_new_tokens)
         self.torch_threads = torch_threads
         self.model = None
@@ -63,11 +65,27 @@ class QwenCpuAsrBackend:
     def transcribe_array(self, samples: np.ndarray, sample_rate: int) -> str:
         if self.model is None:
             raise RuntimeError("ASR backend is not loaded")
-        result = self.model.transcribe((samples.astype(np.float32, copy=False), int(sample_rate)), language=self.language)[0]
+        result = self.model.transcribe(
+            (samples.astype(np.float32, copy=False), int(sample_rate)),
+            context=self.context,
+            language=self._qwen_language(),
+        )[0]
         return result.text
 
     def transcribe_file(self, path: Path) -> str:
         if self.model is None:
             raise RuntimeError("ASR backend is not loaded")
-        result = self.model.transcribe(str(Path(path).resolve()), language=self.language)[0]
+        result = self.model.transcribe(
+            str(Path(path).resolve()),
+            context=self.context,
+            language=self._qwen_language(),
+        )[0]
         return result.text
+
+    def _qwen_language(self) -> Optional[str]:
+        if self.language is None:
+            return None
+        value = str(self.language).strip()
+        if not value or value.lower() in {"auto", "none", "detect", "mixed", "zh-en", "zh+en"}:
+            return None
+        return value

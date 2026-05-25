@@ -28,9 +28,11 @@ def rms(samples: np.ndarray) -> float:
 class SegmenterConfig:
     sample_rate: int = 16000
     silence_threshold: float = 0.015
-    silence_seconds: float = 0.8
+    silence_seconds: float = 2.0
     min_segment_seconds: float = 0.8
-    max_segment_seconds: float = 8.0
+    max_segment_seconds: float = 30.0
+    preview_interval_seconds: float = 1.0
+    min_preview_seconds: float = 1.0
 
 
 class AudioSegmenter:
@@ -93,6 +95,11 @@ class AudioSegmenter:
         self._reset()
         return []
 
+    def snapshot(self, min_samples: int = 1) -> Optional[np.ndarray]:
+        if not self._speech_started or self._buffer.size < int(min_samples):
+            return None
+        return self._buffer.astype(np.float32, copy=True)
+
     def _emit(self) -> np.ndarray:
         segment = self._buffer.astype(np.float32, copy=True)
         self._reset()
@@ -111,11 +118,16 @@ class MicrophoneRecorder:
         config: SegmenterConfig,
         device: Optional[int | str] = None,
         block_seconds: float = 0.2,
+        preview_queue: Optional["queue.Queue[np.ndarray]"] = None,
     ) -> None:
         self.segment_queue = segment_queue
+        self.preview_queue = preview_queue
         self.config = config
         self.device = device
         self.blocksize = max(1, int(config.sample_rate * block_seconds))
+        self.preview_interval_samples = max(1, int(config.preview_interval_seconds * config.sample_rate))
+        self.min_preview_samples = max(1, int(config.min_preview_seconds * config.sample_rate))
+        self._samples_since_preview = 0
         self.segmenter = AudioSegmenter(
             sample_rate=config.sample_rate,
             silence_threshold=config.silence_threshold,
@@ -155,5 +167,20 @@ class MicrophoneRecorder:
     def _callback(self, indata, frames, time_info, status) -> None:
         if status:
             print(f"[audio] {status}", flush=True)
-        for segment in self.segmenter.add(indata.copy()):
+        data = indata.copy()
+        segments = self.segmenter.add(data)
+        for segment in segments:
             self.segment_queue.put(segment)
+        if segments:
+            self._samples_since_preview = 0
+            return
+        if self.preview_queue is None:
+            return
+        self._samples_since_preview += to_mono_float32(data).size
+        if self._samples_since_preview < self.preview_interval_samples:
+            return
+        snapshot = self.segmenter.snapshot(self.min_preview_samples)
+        if snapshot is None:
+            return
+        self.preview_queue.put(snapshot)
+        self._samples_since_preview = 0

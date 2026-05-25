@@ -20,4 +20,4 @@ if (-not (Test-Path $python)) {
 
 Write-Host ""
 Write-Host "Setup complete."
-Write-Host "Try: .\run_qwen3_asr_prototype.ps1 --language Chinese --no-paste"
+Write-Host "Try: .\run_qwen3_asr_prototype.ps1 --no-paste"
