@@ -89,10 +89,10 @@ If you do not have the sample audio, pass any local wav file instead.
 ```
 
 Default hotkeys are `ctrl+h` and `alt+h`. Press either one once to start
-recording and once again to stop. While you speak, the app prints preview lines
-in the terminal. After it detects silence, the completed segment is
-automatically pasted into the current cursor location. Recording stays active
-after each automatic paste until you press one of the hotkeys again.
+recording and once again to stop. After the app detects silence, the completed
+segment is automatically pasted into the current cursor location. Recording
+stays active after each automatic paste until you press one of the hotkeys
+again.
 
 ## Manual Hotkey Configuration
 
@@ -106,7 +106,8 @@ Then edit `settings.json`:
 
 ```json
 {
-  "hotkeys": ["ctrl+h", "alt+h"]
+  "hotkeys": ["ctrl+h", "alt+h"],
+  "preview": false
 }
 ```
 
@@ -136,7 +137,7 @@ Useful options:
 .\run_qwen3_asr_prototype.ps1 --hotkey "ctrl+h" --hotkey "alt+h"
 .\run_qwen3_asr_prototype.ps1 --input-device 1
 .\run_qwen3_asr_prototype.ps1 --silence-threshold 0.02 --silence-seconds 2.0 --max-segment-seconds 30
-.\run_qwen3_asr_prototype.ps1 --preview-interval-seconds 0.8 --min-preview-seconds 1.0
+.\run_qwen3_asr_prototype.ps1 --preview --preview-interval-seconds 2.0 --min-preview-seconds 1.0
 .\run_qwen3_asr_prototype.ps1 --language auto --context "Mostly Chinese dictation with some English technical terms; preserve English words as English."
 ```
 
@@ -145,6 +146,53 @@ Useful options:
 By default the launcher uses `--language auto` so Qwen can detect mixed Chinese
 and English instead of forcing all output as Chinese. It also passes a short
 mixed-language context prompt unless you provide your own `--context`.
+
+## Runtime Switches
+
+Preview is disabled by default because it runs extra ASR passes while you are
+still speaking. On memory-constrained machines this can cause high RAM pressure.
+Enable it only when you need terminal preview text:
+
+```powershell
+.\run_qwen3_asr_prototype.ps1 --preview
+```
+
+Disable preview explicitly:
+
+```powershell
+.\run_qwen3_asr_prototype.ps1 --no-preview
+```
+
+Useful memory and latency controls:
+
+```powershell
+.\run_qwen3_asr_prototype.ps1 --max-segment-seconds 12
+.\run_qwen3_asr_prototype.ps1 --torch-threads 4
+.\run_qwen3_asr_prototype.ps1 --max-new-tokens 64
+```
+
+Switch summary:
+
+- `--preview` / `--no-preview`: enable or disable periodic preview recognition. Default: disabled.
+- `--preview-interval-seconds`: preview cadence when preview is enabled. Larger values reduce CPU/RAM pressure.
+- `--min-preview-seconds`: minimum buffered speech before a preview is attempted.
+- `--silence-seconds`: silence duration before committing a segment to the active text field.
+- `--max-segment-seconds`: hard upper bound for one segment. Smaller values reduce peak memory per ASR call.
+- `--torch-threads`: CPU threads used by PyTorch. Lower values reduce system contention.
+- `--max-new-tokens`: maximum generated output tokens. Lower values reduce generation work.
+- `--monitor-interval`: resource monitor print interval.
+
+The same options can be put in `settings.json`, for example:
+
+```json
+{
+  "hotkeys": ["ctrl+h", "alt+h"],
+  "preview": false,
+  "max_segment_seconds": 12,
+  "torch_threads": 4,
+  "max_new_tokens": 64
+}
+```
 
 ## Glossary Post-Processing
 

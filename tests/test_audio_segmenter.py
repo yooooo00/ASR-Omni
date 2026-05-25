@@ -1,5 +1,6 @@
 import numpy as np
 import queue
+import threading
 
 from asr_omni.audio import AudioSegmenter, MicrophoneRecorder, SegmenterConfig
 
@@ -99,5 +100,33 @@ def test_microphone_recorder_emits_preview_snapshots_without_final_segment():
     recorder._callback(np.ones((4, 1), dtype=np.float32) * 0.2, 4, None, None)
 
     assert segment_queue.empty()
+    preview = preview_queue.get_nowait()
+    assert preview.shape == (4,)
+
+
+def test_microphone_recorder_replaces_stale_preview_without_blocking():
+    segment_queue = queue.Queue()
+    preview_queue = queue.Queue(maxsize=1)
+    preview_queue.put(np.ones(3, dtype=np.float32))
+    config = SegmenterConfig(
+        sample_rate=10,
+        silence_threshold=0.01,
+        silence_seconds=1.0,
+        min_segment_seconds=0.3,
+        max_segment_seconds=10.0,
+        preview_interval_seconds=0.4,
+        min_preview_seconds=0.3,
+    )
+    recorder = MicrophoneRecorder(segment_queue, config, preview_queue=preview_queue)
+
+    thread = threading.Thread(
+        target=recorder._callback,
+        args=(np.ones((4, 1), dtype=np.float32) * 0.2, 4, None, None),
+        daemon=True,
+    )
+    thread.start()
+    thread.join(timeout=1.0)
+
+    assert not thread.is_alive()
     preview = preview_queue.get_nowait()
     assert preview.shape == (4,)

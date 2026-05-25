@@ -182,5 +182,25 @@ class MicrophoneRecorder:
         snapshot = self.segmenter.snapshot(self.min_preview_samples)
         if snapshot is None:
             return
-        self.preview_queue.put(snapshot)
+        self._put_preview(snapshot)
         self._samples_since_preview = 0
+
+    def _put_preview(self, snapshot: np.ndarray) -> None:
+        if self.preview_queue is None:
+            return
+        try:
+            self.preview_queue.put_nowait(snapshot)
+            return
+        except queue.Full:
+            pass
+
+        try:
+            self.preview_queue.get_nowait()
+            self.preview_queue.task_done()
+        except queue.Empty:
+            pass
+
+        try:
+            self.preview_queue.put_nowait(snapshot)
+        except queue.Full:
+            pass

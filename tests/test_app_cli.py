@@ -1,4 +1,4 @@
-from asr_omni.app import build_glossary, parse_args, register_hotkeys
+from asr_omni.app import build_glossary, build_preview_queue, parse_args, register_hotkeys
 
 
 def test_default_hotkeys_include_ctrl_h_and_alt_h():
@@ -15,6 +15,29 @@ def test_default_segmentation_prefers_continuous_dictation():
     assert args.max_segment_seconds == 30.0
     assert args.preview_interval_seconds == 1.0
     assert args.min_preview_seconds == 1.0
+
+
+def test_preview_is_disabled_by_default():
+    args = parse_args([])
+
+    assert args.preview is False
+    assert build_preview_queue(args) is None
+
+
+def test_preview_can_be_enabled_with_cli():
+    args = parse_args(["--preview"])
+
+    assert args.preview is True
+    assert build_preview_queue(args) is not None
+
+
+def test_no_preview_cli_overrides_settings_file(tmp_path):
+    settings_file = tmp_path / "settings.json"
+    settings_file.write_text('{"preview": true}', encoding="utf-8")
+
+    args = parse_args(["--config-file", str(settings_file), "--no-preview"])
+
+    assert args.preview is False
 
 
 def test_default_glossary_is_enabled():

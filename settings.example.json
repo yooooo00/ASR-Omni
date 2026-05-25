@@ -1,3 +1,4 @@
 {
-  "hotkeys": ["ctrl+h", "alt+h"]
+  "hotkeys": ["ctrl+h", "alt+h"],
+  "preview": false
 }

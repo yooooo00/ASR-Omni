@@ -180,6 +180,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--silence-seconds", type=float, default=2.0)
     parser.add_argument("--min-segment-seconds", type=float, default=0.8)
     parser.add_argument("--max-segment-seconds", type=float, default=30.0)
+    parser.add_argument(
+        "--preview",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Enable periodic preview transcriptions while speaking. Disabled by default to reduce memory and CPU load.",
+    )
     parser.add_argument("--preview-interval-seconds", type=float, default=1.0)
     parser.add_argument("--min-preview-seconds", type=float, default=1.0)
     parser.add_argument("--monitor-interval", type=float, default=2.0)
@@ -292,6 +298,12 @@ def register_hotkeys(keyboard_module, hotkeys: list[str], callback) -> None:
         keyboard_module.add_hotkey(hotkey, callback)
 
 
+def build_preview_queue(args: argparse.Namespace) -> Optional["queue.Queue[np.ndarray]"]:
+    if not args.preview:
+        return None
+    return queue.Queue(maxsize=1)
+
+
 def run_test_audio(args: argparse.Namespace) -> int:
     backend = QwenCpuAsrBackend(
         Path(args.model_dir),
@@ -335,7 +347,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         preview_interval_seconds=args.preview_interval_seconds,
         min_preview_seconds=args.min_preview_seconds,
     )
-    preview_queue: "queue.Queue[np.ndarray]" = queue.Queue()
+    preview_queue = build_preview_queue(args)
     recorder = MicrophoneRecorder(segment_queue, config, device=args.input_device, preview_queue=preview_queue)
     inserter = ClipboardTextInserter(restore_clipboard=not args.no_restore_clipboard)
     glossary = build_glossary(args)
