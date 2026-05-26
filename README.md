@@ -107,7 +107,8 @@ Then edit `settings.json`:
 ```json
 {
   "hotkeys": ["ctrl+h", "alt+h"],
-  "preview": false
+  "preview": false,
+  "clipboard_history": false
 }
 ```
 
@@ -138,6 +139,7 @@ Useful options:
 .\run_qwen3_asr_prototype.ps1 --input-device 1
 .\run_qwen3_asr_prototype.ps1 --silence-threshold 0.02 --silence-seconds 2.0 --max-segment-seconds 30
 .\run_qwen3_asr_prototype.ps1 --preview --preview-interval-seconds 2.0 --min-preview-seconds 1.0
+.\run_qwen3_asr_prototype.ps1 --clipboard-history
 .\run_qwen3_asr_prototype.ps1 --language auto --context "Mostly Chinese dictation with some English technical terms; preserve English words as English."
 ```
 
@@ -146,6 +148,27 @@ Useful options:
 By default the launcher uses `--language auto` so Qwen can detect mixed Chinese
 and English instead of forcing all output as Chinese. It also passes a short
 mixed-language context prompt unless you provide your own `--context`.
+
+## Clipboard History
+
+By default transcript paste uses the Windows clipboard plus `Ctrl+V`, but marks
+the temporary clipboard content so Windows should not add it to Win+V clipboard
+history or cloud clipboard sync. The app also restores the previous text
+clipboard content with the same no-history marker after paste.
+
+If you want the old behavior, allow clipboard history explicitly:
+
+```powershell
+.\run_qwen3_asr_prototype.ps1 --clipboard-history
+```
+
+Or in `settings.json`:
+
+```json
+{
+  "clipboard_history": true
+}
+```
 
 ## Runtime Switches
 
@@ -174,6 +197,7 @@ Useful memory and latency controls:
 Switch summary:
 
 - `--preview` / `--no-preview`: enable or disable periodic preview recognition. Default: disabled.
+- `--clipboard-history` / `--no-clipboard-history`: allow or suppress Win+V clipboard history entries. Default: suppressed on Windows.
 - `--preview-interval-seconds`: preview cadence when preview is enabled. Larger values reduce CPU/RAM pressure.
 - `--min-preview-seconds`: minimum buffered speech before a preview is attempted.
 - `--silence-seconds`: silence duration before committing a segment to the active text field.
@@ -188,6 +212,7 @@ The same options can be put in `settings.json`, for example:
 {
   "hotkeys": ["ctrl+h", "alt+h"],
   "preview": false,
+  "clipboard_history": false,
   "max_segment_seconds": 12,
   "torch_threads": 4,
   "max_new_tokens": 64

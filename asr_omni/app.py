@@ -194,6 +194,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--append-space", action="store_true", help="Append a space after each inserted segment.")
     parser.add_argument("--no-paste", action="store_true", help="Print transcripts without pasting into the active app.")
     parser.add_argument("--no-restore-clipboard", action="store_true", help="Leave transcript text in the clipboard.")
+    parser.add_argument(
+        "--clipboard-history",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Allow transcript clipboard writes to appear in Windows clipboard history. Disabled by default.",
+    )
     parser.add_argument("--input-device", default=None, help="Optional sounddevice input device id or name.")
     parser.add_argument("--list-devices", action="store_true", help="List audio devices and exit.")
     parser.add_argument("--test-audio", default=None, help="Transcribe one local audio file and exit.")
@@ -349,7 +355,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
     preview_queue = build_preview_queue(args)
     recorder = MicrophoneRecorder(segment_queue, config, device=args.input_device, preview_queue=preview_queue)
-    inserter = ClipboardTextInserter(restore_clipboard=not args.no_restore_clipboard)
+    inserter = ClipboardTextInserter(
+        restore_clipboard=not args.no_restore_clipboard,
+        clipboard_history=args.clipboard_history,
+    )
     glossary = build_glossary(args)
     app = VoiceInputApp(
         backend,

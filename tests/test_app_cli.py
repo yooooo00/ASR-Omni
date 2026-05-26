@@ -24,6 +24,21 @@ def test_preview_is_disabled_by_default():
     assert build_preview_queue(args) is None
 
 
+def test_clipboard_history_is_disabled_by_default():
+    args = parse_args([])
+
+    assert args.clipboard_history is False
+
+
+def test_clipboard_history_can_be_enabled_from_settings_file(tmp_path):
+    settings_file = tmp_path / "settings.json"
+    settings_file.write_text('{"clipboard_history": true}', encoding="utf-8")
+
+    args = parse_args(["--config-file", str(settings_file)])
+
+    assert args.clipboard_history is True
+
+
 def test_preview_can_be_enabled_with_cli():
     args = parse_args(["--preview"])
 

@@ -1,4 +1,5 @@
 {
   "hotkeys": ["ctrl+h", "alt+h"],
-  "preview": false
+  "preview": false,
+  "clipboard_history": false
 }
