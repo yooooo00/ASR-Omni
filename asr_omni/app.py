@@ -15,6 +15,7 @@ import numpy as np
 from .audio import MicrophoneRecorder, SegmenterConfig
 from .backend import QwenCpuAsrBackend
 from .console import safe_print
+from .control_window import start_control_window
 from .glossary import Glossary
 from .monitor import ResourceMonitor
 from .text_output import ClipboardTextInserter, prepare_text_for_insertion
@@ -70,11 +71,15 @@ class VoiceInputApp:
                 self.recorder.start()
                 self.recording = True
 
+    def is_recording(self) -> bool:
+        with self._recording_lock:
+            return self.recording
+
     def monitor_state(self) -> dict:
         return {
             "model_loaded": self.backend.loaded,
             "queue_depth": self.segment_queue.qsize(),
-            "recording": self.recording,
+            "recording": self.is_recording(),
             "active_threads": self.backend.active_threads(),
         }
 
@@ -199,6 +204,12 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=False,
         help="Allow transcript clipboard writes to appear in Windows clipboard history. Disabled by default.",
+    )
+    parser.add_argument(
+        "--control-window",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Show a small always-on-top mouse control window for toggling recording.",
     )
     parser.add_argument("--input-device", default=None, help="Optional sounddevice input device id or name.")
     parser.add_argument("--list-devices", action="store_true", help="List audio devices and exit.")
@@ -380,6 +391,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     monitor.start()
 
     stop_event = threading.Event()
+    control_window = None
 
     def request_stop(signum=None, frame=None) -> None:
         stop_event.set()
@@ -388,11 +400,17 @@ def main(argv: Optional[list[str]] = None) -> int:
     signal.signal(signal.SIGTERM, request_stop)
 
     register_hotkeys(keyboard, args.hotkeys, app.toggle_recording)
-    print("[voice] ready. Press the hotkey to toggle recording. Press Ctrl+C in this terminal to exit.", flush=True)
+    control_window = start_control_window(app, enabled=args.control_window, on_close=request_stop)
+    print(
+        "[voice] ready. Press the hotkey or control window button to toggle recording. Press Ctrl+C in this terminal to exit.",
+        flush=True,
+    )
     try:
         while not stop_event.wait(0.2):
             pass
     finally:
+        if control_window is not None:
+            control_window.stop()
         keyboard.unhook_all_hotkeys()
         monitor.stop()
         app.stop()

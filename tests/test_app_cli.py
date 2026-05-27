@@ -30,6 +30,18 @@ def test_clipboard_history_is_disabled_by_default():
     assert args.clipboard_history is False
 
 
+def test_control_window_is_enabled_by_default():
+    args = parse_args([])
+
+    assert args.control_window is True
+
+
+def test_control_window_can_be_disabled_from_cli():
+    args = parse_args(["--no-control-window"])
+
+    assert args.control_window is False
+
+
 def test_clipboard_history_can_be_enabled_from_settings_file(tmp_path):
     settings_file = tmp_path / "settings.json"
     settings_file.write_text('{"clipboard_history": true}', encoding="utf-8")

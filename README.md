@@ -89,10 +89,11 @@ If you do not have the sample audio, pass any local wav file instead.
 ```
 
 Default hotkeys are `ctrl+h` and `alt+h`. Press either one once to start
-recording and once again to stop. After the app detects silence, the completed
-segment is automatically pasted into the current cursor location. Recording
-stays active after each automatic paste until you press one of the hotkeys
-again.
+recording and once again to stop. A small always-on-top control window is also
+shown by default; click its button to toggle recording with the mouse. After
+the app detects silence, the completed segment is automatically pasted into the
+current cursor location. Recording stays active after each automatic paste
+until you press one of the hotkeys or click the control button again.
 
 ## Manual Hotkey Configuration
 
@@ -107,6 +108,7 @@ Then edit `settings.json`:
 ```json
 {
   "hotkeys": ["ctrl+h", "alt+h"],
+  "control_window": true,
   "preview": false,
   "clipboard_history": false
 }
@@ -136,6 +138,7 @@ Useful options:
 ```powershell
 .\run_qwen3_asr_prototype.ps1 --hotkey "ctrl+alt+h" --language Chinese --no-paste
 .\run_qwen3_asr_prototype.ps1 --hotkey "ctrl+h" --hotkey "alt+h"
+.\run_qwen3_asr_prototype.ps1 --no-control-window
 .\run_qwen3_asr_prototype.ps1 --input-device 1
 .\run_qwen3_asr_prototype.ps1 --silence-threshold 0.02 --silence-seconds 2.0 --max-segment-seconds 30
 .\run_qwen3_asr_prototype.ps1 --preview --preview-interval-seconds 2.0 --min-preview-seconds 1.0
@@ -196,6 +199,7 @@ Useful memory and latency controls:
 
 Switch summary:
 
+- `--control-window` / `--no-control-window`: show or hide the always-on-top mouse toggle. Default: shown.
 - `--preview` / `--no-preview`: enable or disable periodic preview recognition. Default: disabled.
 - `--clipboard-history` / `--no-clipboard-history`: allow or suppress Win+V clipboard history entries. Default: suppressed on Windows.
 - `--preview-interval-seconds`: preview cadence when preview is enabled. Larger values reduce CPU/RAM pressure.
@@ -211,6 +215,7 @@ The same options can be put in `settings.json`, for example:
 ```json
 {
   "hotkeys": ["ctrl+h", "alt+h"],
+  "control_window": true,
   "preview": false,
   "clipboard_history": false,
   "max_segment_seconds": 12,

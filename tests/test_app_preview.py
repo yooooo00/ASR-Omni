@@ -94,6 +94,21 @@ def test_final_segment_transcription_applies_glossary_before_insert():
     assert inserter.inserted == ["open claude code"]
 
 
+def test_is_recording_reflects_toggle_state():
+    backend = FakeBackend()
+    recorder = FakeRecorder()
+    inserter = FakeInserter()
+    app = VoiceInputApp(backend, recorder, inserter)
+
+    assert app.is_recording() is False
+
+    app.toggle_recording()
+    assert app.is_recording() is True
+
+    app.toggle_recording()
+    assert app.is_recording() is False
+
+
 def test_stale_previews_can_be_dropped_after_final_segment():
     backend = FakeBackend()
     recorder = FakeRecorder()
